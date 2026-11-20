@@ -1,0 +1,49 @@
+
+name: Build Melody Music APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get source files
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Extract project
+        run: |
+          mkdir source
+          unzip Melody_Music_Flutter_Android.zip -d source
+
+      - name: Generate Android project
+        run: |
+          flutter create --platforms=android --org com.example --project-name melody_music generated
+          cp source/pubspec.yaml generated/pubspec.yaml
+          rm -rf generated/lib
+          cp -r source/lib generated/lib
+          cp source/android/app/src/main/AndroidManifest.xml generated/android/app/src/main/AndroidManifest.xml
+
+      - name: Build APK
+        run: |
+          cd generated
+          flutter pub get
+          flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Melody-Music-APK
+          path: generated/build/app/outputs/flutter-apk/app-release.apk
